@@ -47,7 +47,7 @@ reproduce_volcanics_graph         % all Volcanics_evolution_* folders
 reproduce_volcanics_graph('Volcanics_evolution_1')
 ```
 
-The maps of each `Figure_*` folder are written to `figures/<folder name>/`, and the volcanism plots to `figures/volume_vs_time_vs_space_<folder name>.png`. In each `Volcanics_evolution_*` folder, the first output file only provides the initial state; the volumes are computed from the second file onwards.
+Place the scripts and the unzipped folders in the same directory, and set this directory as the MATLAB current folder before running the scripts. The maps of each `Figure_*` folder are written to `Plots/<folder name>/`, and the volcanism plots to `Plots/volume_vs_time_vs_space_<folder name>.png`. In each `Volcanics_evolution_*` folder, the first output file only provides the initial state; the volumes are computed from the second file onwards.
 
 ## Paper figures
 
