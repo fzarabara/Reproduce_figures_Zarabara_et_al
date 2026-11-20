@@ -22,7 +22,7 @@ Each script describes its input, method and settings in its help text (`help rep
 
 ## Model output
 
-The model output files (`dsdNNNmark.h5`) are archived on Zenodo: doi:[DATA DOI]. Download the zip files and unzip them next to the scripts:
+The model output files (`dsdNNNmark.h5`) are archived on Zenodo: doi:10.5281/zenodo.24393069. Download the zip files and unzip them next to the scripts:
 
 ```
 reproduce_figures.m
