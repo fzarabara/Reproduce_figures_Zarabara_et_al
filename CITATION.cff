@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use these scripts, please cite them as below."
+title: "MATLAB scripts to reproduce the model figures of Zarabara et al. (EPSL)"
+version: 1.0.0
+date-released: 2026-11-20
+license: MIT
+authors:
+  - family-names: Zarabara
+    given-names: Filippo
+    affiliation: "Dipartimento di Geoscienze, Università di Padova, Italy; Institut für Geowissenschaften, Goethe-Universität Frankfurt, Germany"
+  - family-names: Faccenda
+    given-names: Manuele
+    affiliation: "Dipartimento di Geoscienze, Università di Padova, Italy"
+  - family-names: Yang
+    given-names: Jianfeng
+    affiliation: "IGGCAS, Beijing, China"
+  - family-names: Faccenna
+    given-names: Claudio
+    affiliation: "GFZ Potsdam, Germany; Dipartimento di Scienze, Università Roma Tre, Italy"
+keywords:
+  - geodynamics
+  - numerical modelling
+  - intraplate volcanism
+  - subduction
