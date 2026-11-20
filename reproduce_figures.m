@@ -18,15 +18,12 @@ function reproduce_figures(dataDir, outDir, fileNumbers)
 %
 %     Composition_NNN.png           material (composition) field
 %     CompositionVelocity_NNN.png   material field + velocity arrows
+%                                   (only if dsdNNNmarkv.h5 is present)
 %     Temperature_NNN.png           absolute temperature + isotherms
-%                                   + velocity arrows
 %     TemperatureAnomaly_NNN.png    temperature anomaly with respect to a
 %                                   linear reference profile + labelled
-%                                   isotherms + velocity arrows
+%                                   isotherms
 %     ExtractedMelt_NNN.png         extracted melt
-%
-%   All figures show only the region Opt.PlotRegion (x = 1000-5000 km,
-%   depth = 30-900 km), as in the paper.
 %
 %   INPUT FILES
 %   dsdNNNmark.h5 (HDF5), NNN = output step, zero-padded to 3 digits:
@@ -37,9 +34,11 @@ function reproduce_figures(dataDir, outDir, fileNumbers)
 %            -1      -> one empty cell (plotted as material 0)
 %            m >= 0  -> one cell of material m
 %     /Tk    temperature [K]
-%     /Vx    horizontal velocity (optional; arrows skipped if missing)
-%     /Vy    vertical velocity   (optional; arrows skipped if missing)
 %     /wt    extracted melt
+%   dsdNNNmarkv.h5 (optional): copy of the output file of the same step
+%   that contains the velocity field, used for the velocity arrows:
+%     /Vx    horizontal velocity
+%     /Vy    vertical velocity
 %
 %   NOTE ON VELOCITY ARROWS
 %   Arrows are shown on a regular subset of grid nodes. Their length is
@@ -72,7 +71,7 @@ end
 [~, folderName] = fileparts(strip(dataDir, 'right', filesep));
 
 Opt.DataDir = dataDir;                               % folder with dsdNNNmark.h5
-Opt.OutDir  = fullfile(here, 'figures', folderName); % folder for the PNG figures
+Opt.OutDir  = fullfile(here, 'Plots', folderName); % folder for the PNG figures
 Opt.Files   = [];                                    % [] = all files in DataDir
 
 % Figures to produce
@@ -83,14 +82,15 @@ Opt.Plot.TemperatureAnomaly  = true;
 Opt.Plot.ExtractedMelt       = true;
 
 % Plotted region: [xmin xmax ymin ymax] in km
-Opt.PlotRegion = [1000 5000 30 900];
+Opt.PlotRegion = [1000 4000 30 900];
 
 % Output
 Opt.Resolution     = 600;                  % dpi, temperature and melt maps
 Opt.ResComposition = 600;                  % dpi, composition maps
 Opt.FigurePosition     = [100 100 560 420];% pixels; fixed for reproducibility
-Opt.FontSize           = 16;               % axis tick labels
-Opt.TimeFontSize       = 24;               % time stamp in lower-right corner
+Opt.FontSize           = 10;               % tick labels (axes and colour bar)
+Opt.CbarLabelFontSize  = 12;               % colour-bar label
+Opt.TimeFontSize       = 14;               % time stamp in lower-right corner
 
 % Composition
 Opt.Comp.shading = 'interp';   % as in the paper; 'flat' avoids blended
@@ -120,6 +120,7 @@ Opt.Vel.minLengthFrac = 0.08;          % min arrow length / max arrow length
 Opt.Vel.scale         = 0.7;           % quiver AutoScaleFactor
 Opt.Vel.color         = [0.5 0.5 0.5];
 Opt.Vel.lineWidth     = 0.9;
+Opt.Vel.onTemperature = false;         % also draw arrows on temperature maps
 %% =======================================================================
 
 if nargin >= 2 && ~isempty(outDir),      Opt.OutDir  = outDir;      end
@@ -149,10 +150,14 @@ for inum = Opt.Files(:).'
     fprintf('Plotting %s\n', fname);
 
     G   = readHeader(fname, Opt.PlotRegion(4));
+    % Velocity: from the companion file dsdNNNmarkv.h5, if present
+    vfile = fullfile(Opt.DataDir, sprintf('dsd%03dmarkv.h5', inum));
     vel = [];
-    if Opt.Plot.CompositionVelocity || Opt.Plot.Temperature || Opt.Plot.TemperatureAnomaly
-        vel = readVelocity(fname, G);
+    if exist(vfile, 'file')
+        vel = readVelocity(vfile, Opt.PlotRegion(4));
     end
+    velT = [];                          % arrows on temperature maps
+    if Opt.Vel.onTemperature; velT = vel; end
     tag = sprintf('%03d', inum);
 
     % ---- Composition (with and without velocity) ----------------------
@@ -163,7 +168,7 @@ for inum = Opt.Files(:).'
             plotComposition(hf, G, C, [], Opt);
             saveFigure(hf, Opt, ['Composition_' tag], Opt.ResComposition);
         end
-        if Opt.Plot.CompositionVelocity
+        if Opt.Plot.CompositionVelocity && ~isempty(vel)
             plotComposition(hf, G, C, vel, Opt);
             saveFigure(hf, Opt, ['CompositionVelocity_' tag], Opt.ResComposition);
         end
@@ -173,11 +178,11 @@ for inum = Opt.Files(:).'
     if Opt.Plot.Temperature || Opt.Plot.TemperatureAnomaly
         TK = readField(fname, '/Tk', G);
         if Opt.Plot.Temperature
-            plotTemperature(hf, G, TK, vel, Opt);
+            plotTemperature(hf, G, TK, velT, Opt);
             saveFigure(hf, Opt, ['Temperature_' tag], Opt.Resolution);
         end
         if Opt.Plot.TemperatureAnomaly
-            plotTemperatureAnomaly(hf, G, TK, vel, Opt);
+            plotTemperatureAnomaly(hf, G, TK, velT, Opt);
             saveFigure(hf, Opt, ['TemperatureAnomaly_' tag], Opt.Resolution);
         end
     end
@@ -204,7 +209,7 @@ shading(ax, Opt.Comp.shading);
 colormap(ax, compositionColormap());
 set(ax, 'CLim', [0 99]);
 hold(ax, 'on');
-addVelocity(ax, G, vel, Opt.Vel);
+addVelocity(ax, vel, Opt.Vel);
 hold(ax, 'off');
 finishAxes(ax, G, Opt, 'k');
 end
@@ -218,12 +223,12 @@ shading(ax, 'interp');
 set(ax, 'CLim', Opt.T.climC);
 colormap(ax, flipud(crameri('lajolla', 256)));
 cb = colorbar(ax, 'southoutside');
-xlabel(cb, Opt.T.cbarLabel, 'FontSize', 30);
+xlabel(cb, Opt.T.cbarLabel, 'FontSize', Opt.CbarLabelFontSize);
 cb.FontSize = Opt.FontSize;
 hold(ax, 'on');
 % Isotherms drawn on the temperature in Kelvin (levels in Opt.T.isothermsK)
 contour(ax, G.x, G.y, TK, Opt.T.isothermsK, 'k', 'LineWidth', 0.4, 'ShowText', 'off');
-addVelocity(ax, G, vel, Opt.Vel);
+addVelocity(ax, vel, Opt.Vel);
 hold(ax, 'off');
 finishAxes(ax, G, Opt, 'k');
 end
@@ -245,7 +250,7 @@ set(ax, 'CLim', Opt.TA.clim);
 colormap(ax, crameri('vik', 256));
 if Opt.TA.colorbar
     cb = colorbar(ax, 'southoutside');
-    xlabel(cb, Opt.TA.cbarLabel, 'FontSize', 30);
+    xlabel(cb, Opt.TA.cbarLabel, 'FontSize', Opt.CbarLabelFontSize);
     cb.FontSize = Opt.FontSize;
     tv = cb.Ticks;
     ts = string(tv);
@@ -255,7 +260,7 @@ end
 hold(ax, 'on');
 contour(ax, G.x, G.y, TK - 273.15, Opt.TA.isothermsC, 'k', 'LineWidth', 0.4, ...
     'ShowText', 'on', 'LabelSpacing', 1e3);
-addVelocity(ax, G, vel, Opt.Vel);
+addVelocity(ax, vel, Opt.Vel);
 hold(ax, 'off');
 finishAxes(ax, G, Opt, 'w');
 end
@@ -271,15 +276,16 @@ if ~isempty(Opt.Melt.clim)
     set(ax, 'CLim', Opt.Melt.clim);
 end
 cb = colorbar(ax, 'southoutside');
-xlabel(cb, Opt.Melt.cbarLabel, 'FontSize', 14);
-cb.FontSize = 12;
+xlabel(cb, Opt.Melt.cbarLabel, 'FontSize', Opt.CbarLabelFontSize);
+cb.FontSize = Opt.FontSize;
 finishAxes(ax, G, Opt, 'k');
 end
 
 
-function addVelocity(ax, G, vel, V)
+function addVelocity(ax, vel, V)
 % Velocity arrows on a regular subset of nodes, with a minimum length.
 if isempty(vel); return; end
+G = vel.G;                              % grid of the velocity file
 step = max(1, round(G.nx / V.nArrowsX));
 ix   = 1:step:G.nx;
 iy   = 1:step:G.ny;
@@ -344,14 +350,16 @@ F = F(G.iy, :);
 end
 
 
-function vel = readVelocity(fname, G)
-% Returns [] (and warns) if the velocity datasets are not in the file.
+function vel = readVelocity(vfile, maxDepth)
+% Reads Vx, Vy and their grid from the velocity file dsdNNNmarkv.h5.
+% Returns [] (and warns) if they cannot be read.
 try
-    vel.vx = readField(fname, '/Vx', G);
-    vel.vy = readField(fname, '/Vy', G);
+    vel.G  = readHeader(vfile, maxDepth);
+    vel.vx = readField(vfile, '/Vx', vel.G);
+    vel.vy = readField(vfile, '/Vy', vel.G);
 catch
     warning('reproduce_figures:noVelocity', ...
-        'Vx/Vy not found in %s: velocity arrows not drawn.', fname);
+        'Vx/Vy could not be read from %s: velocity arrows not drawn.', vfile);
     vel = [];
 end
 end

@@ -67,7 +67,7 @@ end
 [~, folderName] = fileparts(strip(dataDir, 'right', filesep));
 
 Opt.DataDir   = dataDir;                   % folder with dsdNNNmark.h5
-Opt.OutDir    = fullfile(here, 'figures'); % folder for the PNG figure
+Opt.OutDir    = fullfile(here, 'Plots'); % folder for the PNG figure
 Opt.Files     = [];                        % output steps; [] = all files
 Opt.ModelName = folderName;                % used in the file name
 
@@ -88,9 +88,9 @@ Opt.TrenchOffset = 20;           % shift added to the trench position [km]
 % Binning and plot
 Opt.XLim     = [1500 3500];      % distance range [km]
 Opt.BinX     = 26;               % bin width in distance [km]
-Opt.BinT     = 0.2;              % bin width in time [Myr]
+Opt.BinT     = 0.15;              % bin width in time [Myr]
 Opt.CLim     = [0 1];            % colour limits [km^3 km^-1]
-Opt.FontSize = 20;               % all text scales with this
+Opt.FontSize = 18;               % all text scales with this
 
 % Output
 Opt.Resolution     = 600;                   % dpi
@@ -141,7 +141,6 @@ for k = 1:nSteps
     if ~exist(fname, 'file')
         error('reproduce_volcanics_graph:missingFile', 'File not found: %s', fname);
     end
-    fprintf('Reading %s\n', fname);
 
     H       = double(h5readatt(fname, '/', 'General'));
     time(k) = H(5) / 1e6;                                   % [Myr]
