@@ -5,10 +5,15 @@ version: 1.0.0
 date-released: 2026-11-20
 license: MIT
 repository-code: "https://github.com/fzarabara/Reproduce_figures_Zarabara_et_al"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.24393069"
+    description: "Model output (HDF5 files) needed to run the scripts"
 authors:
   - family-names: Zarabara
     given-names: Filippo
     affiliation: "Dipartimento di Geoscienze, Università di Padova, Italy; Institut für Geowissenschaften, Goethe-Universität Frankfurt, Germany"
+    orcid: "https://orcid.org/0009-0006-9785-4177"
   - family-names: Faccenda
     given-names: Manuele
     affiliation: "Dipartimento di Geoscienze, Università di Padova, Italy"
