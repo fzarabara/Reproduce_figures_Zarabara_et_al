@@ -4,6 +4,7 @@ title: "MATLAB scripts to reproduce the model figures of Zarabara et al. (EPSL)"
 version: 1.0.0
 date-released: 2026-11-20
 license: MIT
+repository-code: "https://github.com/fzarabara/Reproduce_figures_Zarabara_et_al"
 authors:
   - family-names: Zarabara
     given-names: Filippo
