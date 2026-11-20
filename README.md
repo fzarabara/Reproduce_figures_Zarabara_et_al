@@ -1,4 +1,4 @@
-# Model figures – Zarabara et al. (Earth and Planetary Science Letters)
+# Model figures – Zarabara et al. (EPSL)
 
 MATLAB scripts to reproduce the model figures of:
 
