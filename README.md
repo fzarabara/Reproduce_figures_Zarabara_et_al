@@ -59,7 +59,7 @@ The maps of each `Figure_*` folder are written to `figures/<folder name>/`, and 
 | `Figure_4de` | Fig. 4d–e | ∆T100w0.1v1∆η10 |
 | `Figure_5a` | Fig. 5a | ∆T100w0.1v5∆η1 |
 | `Figure_5d` | Fig. 5d | ∆T100w0.1v5∆η1Katz |
-| `Volcanics_evolution_1` | Fig. 3b | ∆T100w0v5∆η1 |
+| `Volcanics_evolution_1` | Fig. 3d | ∆T100w0v5∆η1 |
 | `Volcanics_evolution_2` | Fig. 4c | ∆T100w0.1v1∆η1 |
 
 Model IDs: ΔT = temperature excess of the lower mantle (°C), w = water content (wt%), v = convergence velocity (cm yr⁻¹), Δη = MTZ–LM viscosity contrast (see Table 2 of the paper).
