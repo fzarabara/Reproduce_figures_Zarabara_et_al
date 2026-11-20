@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use these scripts, please cite them as below."
 title: "MATLAB scripts to reproduce the model figures of Zarabara et al. (EPSL)"
-version: 1.0.0
+version: 1.0.2
 date-released: 2026-11-20
 license: MIT
 repository-code: "https://github.com/fzarabara/Reproduce_figures_Zarabara_et_al"
