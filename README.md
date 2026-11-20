@@ -10,10 +10,10 @@ The numerical models were run with the 2D petrological-thermomechanical code I2V
 
 | File | What it does |
 |---|---|
-| `CreateFigures.m` | Composition, composition with velocity, absolute temperature, temperature anomaly and extracted melt maps for each output step |
-| `CreateVolumeFigure.m` | Volume of newly formed volcanic material as a function of distance and time, with the trench position |
+| `reproduce_figures.m` | Composition, composition with velocity, absolute temperature, temperature anomaly and extracted melt maps for each output step |
+| `reproduce_volcanics_graph.m` | Volume of newly formed volcanic material as a function of distance and time, with the trench position |
 
-Each script describes its input, method and settings in its help text (`help CreateFigures`, `help CreateVolumeFigure`).
+Each script describes its input, method and settings in its help text (`help reproduce_figures`, `help reproduce_volcanics_graph`).
 
 ## Requirements
 
@@ -22,34 +22,45 @@ Each script describes its input, method and settings in its help text (`help Cre
 
 ## Model output
 
-The model output files (`dsdNNNmark.h5`) are archived separately on Zenodo: doi:[DATA DOI]. Download them and place each model in its own folder:
+The model output files (`dsdNNNmark.h5`) are archived on Zenodo: doi:[DATA DOI]. Download the zip files and unzip them next to the scripts:
 
 ```
-data/
-  test23/   dsdNNNmark.h5 files of model [MODEL ID]
-  test51/   dsdNNNmark.h5 files of model [MODEL ID]
-CreateFigures.m
-CreateVolumeFigure.m
+reproduce_figures.m
+reproduce_volcanics_graph.m
+Figure_3a/              2-4 output files each
+Figure_3b/
+Figure_4ab/
+Figure_4de/
+Figure_5a/
+Figure_5d/
+Volcanics_evolution_1/  50 output files each
+Volcanics_evolution_2/
 ```
 
 ## Usage
 
 ```matlab
-% Maps (composition, temperature, temperature anomaly, extracted melt)
-CreateFigures('data/test23', 'figures', 11)
+reproduce_figures                 % all Figure_* folders
+reproduce_figures('Figure_3a')    % one folder only
 
-% Volume of volcanic material vs distance and time
-CreateVolumeFigure('data/test51', 'figures')
+reproduce_volcanics_graph         % all Volcanics_evolution_* folders
+reproduce_volcanics_graph('Volcanics_evolution_1')
 ```
 
-The figures are written as PNG files to `figures/`.
+The maps of each `Figure_*` folder are written to `figures/<folder name>/`, and the volcanism plots to `figures/volume_vs_time_vs_space_<folder name>.png`. In each `Volcanics_evolution_*` folder, the first output file only provides the initial state; the volumes are computed from the second file onwards.
 
 ## Paper figures
 
-| Paper figure | Script | Model | Output step(s) |
-|---|---|---|---|
-| Fig. [X] | `CreateFigures.m` | [MODEL ID] | [N] |
-| Fig. [X] | `CreateVolumeFigure.m` | [MODEL ID] | 6–67 |
+| Folder | Paper figure | Model |
+|---|---|---|
+| `Figure_3a` | Fig. 3a | [MODEL ID] |
+| `Figure_3b` | Fig. 3b | [MODEL ID] |
+| `Figure_4ab` | Fig. 4a–b | [MODEL ID] |
+| `Figure_4de` | Fig. 4d–e | [MODEL ID] |
+| `Figure_5a` | Fig. 5a | [MODEL ID] |
+| `Figure_5d` | Fig. 5d | [MODEL ID] |
+| `Volcanics_evolution_1` | Fig. [X] | [MODEL ID] |
+| `Volcanics_evolution_2` | Fig. [X] | [MODEL ID] |
 
 ## License
 

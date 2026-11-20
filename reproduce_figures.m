@@ -1,12 +1,17 @@
-function ReproduceFigures(dataDir, outDir, fileNumbers)
-%ReproduceFigures  Reproduce the model figures of the paper from the marker
+function reproduce_figures(dataDir, outDir, fileNumbers)
+%REPRODUCE_FIGURES  Reproduce the model figures of the paper from the marker
 %   output files (dsdNNNmark.h5) of the numerical simulations.
 %
-%   ReproduceFigures                       uses the defaults in USER SETTINGS
-%   ReproduceFigures(dataDir)              reads dsdNNNmark.h5 files in dataDir
-%   ReproduceFigures(dataDir, outDir)      writes the PNG figures to outDir
-%   ReproduceFigures(dataDir, outDir, N)   plots output steps N only,
-%                                       e.g. 11 or [5 11 20]
+%   reproduce_figures                     plots every Figure_* folder found
+%                                         next to this script
+%   reproduce_figures('Figure_3a')        plots the files in folder Figure_3a
+%   reproduce_figures(dataDir, outDir)    writes the PNG figures to outDir
+%   reproduce_figures(dataDir, outDir, N) plots output steps N only,
+%                                         e.g. 11 or [5 11 20]
+%
+%   The figures of each folder are written to figures/<folder name>/
+%   (unless outDir is given), so that files with the same output step in
+%   different folders do not overwrite each other.
 %
 %   For every output step NNN the following figures are produced
 %   (each can be switched on/off in Opt.Plot below):
@@ -48,12 +53,27 @@ function ReproduceFigures(dataDir, outDir, fileNumbers)
 %     MATLAB function by C. Greene) on the MATLAB path, for the temperature
 %     colour maps 'lajolla' and 'vik'.
 
-%% ======================== USER SETTINGS ================================
 here = fileparts(mfilename('fullpath'));
 
-Opt.DataDir = fullfile(here, 'data');      % folder with dsdNNNmark.h5
-Opt.OutDir  = fullfile(here, 'figures');   % folder for the PNG figures
-Opt.Files   = [];                          % [] = all files in DataDir
+% No folder given: plot every Figure_* folder next to this script
+if nargin < 1 || isempty(dataDir)
+    d = dir(fullfile(here, 'Figure_*'));
+    d = d([d.isdir]);
+    if isempty(d)
+        error('reproduce_figures:noData', 'No Figure_* folders found in %s', here);
+    end
+    for k = 1:numel(d)
+        reproduce_figures(fullfile(here, d(k).name));
+    end
+    return
+end
+
+%% ======================== USER SETTINGS ================================
+[~, folderName] = fileparts(strip(dataDir, 'right', filesep));
+
+Opt.DataDir = dataDir;                               % folder with dsdNNNmark.h5
+Opt.OutDir  = fullfile(here, 'figures', folderName); % folder for the PNG figures
+Opt.Files   = [];                                    % [] = all files in DataDir
 
 % Figures to produce
 Opt.Plot.Composition         = true;
@@ -102,7 +122,6 @@ Opt.Vel.color         = [0.5 0.5 0.5];
 Opt.Vel.lineWidth     = 0.9;
 %% =======================================================================
 
-if nargin >= 1 && ~isempty(dataDir),     Opt.DataDir = dataDir;     end
 if nargin >= 2 && ~isempty(outDir),      Opt.OutDir  = outDir;      end
 if nargin >= 3 && ~isempty(fileNumbers), Opt.Files   = fileNumbers; end
 
@@ -114,7 +133,7 @@ if isempty(Opt.Files)
     Opt.Files = findOutputSteps(Opt.DataDir);
 end
 if isempty(Opt.Files)
-    error('ReproduceFigures:noData', 'No dsdNNNmark.h5 files found in %s', Opt.DataDir);
+    error('reproduce_figures:noData', 'No dsdNNNmark.h5 files found in %s', Opt.DataDir);
 end
 
 % One invisible figure, reused for every plot
@@ -124,7 +143,7 @@ cleanup = onCleanup(@() close(hf));
 for inum = Opt.Files(:).'
     fname = fullfile(Opt.DataDir, sprintf('dsd%03dmark.h5', inum));
     if ~exist(fname, 'file')
-        warning('ReproduceFigures:missingFile', 'File not found, skipped: %s', fname);
+        warning('reproduce_figures:missingFile', 'File not found, skipped: %s', fname);
         continue
     end
     fprintf('Plotting %s\n', fname);
@@ -331,7 +350,7 @@ try
     vel.vx = readField(fname, '/Vx', G);
     vel.vy = readField(fname, '/Vy', G);
 catch
-    warning('ReproduceFigures:noVelocity', ...
+    warning('reproduce_figures:noVelocity', ...
         'Vx/Vy not found in %s: velocity arrows not drawn.', fname);
     vel = [];
 end
@@ -372,10 +391,10 @@ end
 
 function checkRequirements(Opt)
 if exist('exportgraphics', 'file') == 0
-    error('ReproduceFigures:matlabVersion', 'MATLAB R2020a or newer is required (exportgraphics).');
+    error('reproduce_figures:matlabVersion', 'MATLAB R2020a or newer is required (exportgraphics).');
 end
 if (Opt.Plot.Temperature || Opt.Plot.TemperatureAnomaly) && exist('crameri', 'file') ~= 2
-    error('ReproduceFigures:crameri', ...
+    error('reproduce_figures:crameri', ...
         ['crameri.m not found. Download it (Scientific colour maps, ' ...
          'doi:10.5281/zenodo.1243862) and add it to the MATLAB path.']);
 end

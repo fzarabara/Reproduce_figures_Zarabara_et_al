@@ -1,24 +1,32 @@
-function CreateVolumeFigure(dataDir, outDir, fileNumbers)
-%CREATEVOLUMEFIGURE  Reproduce the paper figure of the volume of newly
+function reproduce_volcanics_graph(dataDir, outDir, fileNumbers)
+%REPRODUCE_VOLCANICS_GRAPH  Reproduce the paper figure of the volume of newly
 %   formed volcanic material as a function of distance and time, with the
 %   trench position, from the marker output files (dsdNNNmark.h5).
 %
-%   CreateVolumeFigure                       uses the defaults in USER SETTINGS
-%   CreateVolumeFigure(dataDir)              reads dsdNNNmark.h5 files in dataDir
-%   CreateVolumeFigure(dataDir, outDir)      writes the PNG figure to outDir
-%   CreateVolumeFigure(dataDir, outDir, N)   uses output steps N, e.g. 6:67
+%   reproduce_volcanics_graph                   plots every
+%                                               Volcanics_evolution_* folder
+%                                               found next to this script
+%   reproduce_volcanics_graph('Volcanics_evolution_1')
+%                                               plots the files in that folder
+%   reproduce_volcanics_graph(dataDir, outDir)  writes the PNG figure to outDir
+%   reproduce_volcanics_graph(dataDir, outDir, N)
+%                                               uses output steps N, e.g. 6:67
 %
-%   Output: volume_vs_time_vs_space_<ModelName>_volcanic.png
-%           (without "_volcanic" if Opt.DepthCutoff > 45 km)
+%   Output: figures/volume_vs_time_vs_space_<folder name>.png
+%
+%   STEPS USED
+%   By default all dsdNNNmark.h5 files in the folder are used: the first
+%   one only provides the initial state (step 1 of the METHOD below), and
+%   the volumes are computed from the second file onwards. If output
+%   steps N are given, the initial state is read from step N(1)-1.
 %
 %   METHOD
 %   For every output step:
 %   1. Cells are "new volcanic material" if they hold material
 %      Opt.VolcanicIds (16 or 19) now but did not hold that same material
 %      in the previous output step, and lie above Opt.DepthCutoff.
-%      For the first step, the previous state is read from the file
-%      before it (step N(1)-1); if that file is missing, all volcanic
-%      material present at the first step counts as new.
+%      For the first step, the previous state is the initial state
+%      (see STEPS USED).
 %   2. For each column, (1 - wt) is summed over these cells, clipped to
 %      [Opt.SumThreshold, Opt.WeightUpperBound], and multiplied by the
 %      cell area, giving a volume per unit length along strike.
@@ -28,7 +36,7 @@ function CreateVolumeFigure(dataDir, outDir, fileNumbers)
 %   Opt.BinT (time); each bin is the mean of its non-zero values.
 %
 %   INPUT FILES
-%   Same files and format as CreateFigures.m (see its help text):
+%   Same files and format as reproduce_figures.m (see its help text):
 %     attribute 'General' on '/' : [xmin xmax ymin ymax time nx ny]
 %     /Comp  material ids, run-length encoded
 %     /wt    extracted melt
@@ -39,13 +47,29 @@ function CreateVolumeFigure(dataDir, outDir, fileNumbers)
 %   - crameri.m (Scientific colour maps, F. Crameri, doi:10.5281/zenodo.1243862;
 %     MATLAB function by C. Greene) on the MATLAB path, for 'batlowW'.
 
-%% ======================== USER SETTINGS ================================
 here = fileparts(mfilename('fullpath'));
 
-Opt.DataDir   = fullfile(here, 'data');    % folder with dsdNNNmark.h5
+% No folder given: plot every Volcanics_evolution_* folder next to this script
+if nargin < 1 || isempty(dataDir)
+    d = dir(fullfile(here, 'Volcanics_evolution_*'));
+    d = d([d.isdir]);
+    if isempty(d)
+        error('reproduce_volcanics_graph:noData', ...
+            'No Volcanics_evolution_* folders found in %s', here);
+    end
+    for k = 1:numel(d)
+        reproduce_volcanics_graph(fullfile(here, d(k).name));
+    end
+    return
+end
+
+%% ======================== USER SETTINGS ================================
+[~, folderName] = fileparts(strip(dataDir, 'right', filesep));
+
+Opt.DataDir   = dataDir;                   % folder with dsdNNNmark.h5
 Opt.OutDir    = fullfile(here, 'figures'); % folder for the PNG figure
-Opt.Files     = 6:67;                      % output steps; [] = all files
-Opt.ModelName = 'test51';                  % used in the file name
+Opt.Files     = [];                        % output steps; [] = all files
+Opt.ModelName = folderName;                % used in the file name
 
 % Datasets
 Opt.CompDataset   = '/Comp';
@@ -73,19 +97,24 @@ Opt.Resolution     = 600;                   % dpi
 Opt.FigurePosition = [100 100 1000 700];    % pixels; fixed for reproducibility
 %% =======================================================================
 
-if nargin >= 1 && ~isempty(dataDir), Opt.DataDir = dataDir; end
 if nargin >= 2 && ~isempty(outDir),  Opt.OutDir  = outDir;  end
-if nargin >= 3,                      Opt.Files   = fileNumbers; end
+if nargin >= 3 && ~isempty(fileNumbers), Opt.Files = fileNumbers; end
 
 checkRequirements();
 
 if ~exist(Opt.OutDir, 'dir'); mkdir(Opt.OutDir); end
 
 if isempty(Opt.Files)
-    Opt.Files = findOutputSteps(Opt.DataDir);
-end
-if isempty(Opt.Files)
-    error('CreateVolumeFigure:noData', 'No dsdNNNmark.h5 files found in %s', Opt.DataDir);
+    % All files in the folder: the first one is the initial state
+    steps = findOutputSteps(Opt.DataDir);
+    if numel(steps) < 2
+        error('reproduce_volcanics_graph:noData', ...
+            'At least two dsdNNNmark.h5 files are needed in %s', Opt.DataDir);
+    end
+    initialStep = steps(1);
+    Opt.Files   = steps(2:end);
+else
+    initialStep = Opt.Files(1) - 1;
 end
 Opt.Files = Opt.Files(:).';
 
@@ -98,8 +127,8 @@ time   = zeros(nSteps, 1);
 trench = zeros(nSteps, 1);
 volume = zeros(nSteps, G.nx);
 
-prevFile = stepFile(Opt.DataDir, Opt.Files(1) - 1);
-if Opt.Files(1) > 1 && exist(prevFile, 'file')
+prevFile = stepFile(Opt.DataDir, initialStep);
+if initialStep >= 0 && exist(prevFile, 'file')
     Cprev = readComposition(prevFile, Opt.CompDataset, G);
 else
     Cprev = zeros(G.ny, G.nx);
@@ -110,7 +139,7 @@ aboveCutoff = G.y(:) <= Opt.DepthCutoff;
 for k = 1:nSteps
     fname = stepFile(Opt.DataDir, Opt.Files(k));
     if ~exist(fname, 'file')
-        error('CreateVolumeFigure:missingFile', 'File not found: %s', fname);
+        error('reproduce_volcanics_graph:missingFile', 'File not found: %s', fname);
     end
     fprintf('Reading %s\n', fname);
 
@@ -191,11 +220,7 @@ ylabel(ax, 'Time [Myr]', 'FontSize', fs);
 lgd = legend(ax, hTrench, {'Trench'}, 'Location', 'southeast');
 lgd.FontSize = fs - 2;
 
-if Opt.DepthCutoff <= 45
-    name = sprintf('volume_vs_time_vs_space_%s_volcanic.png', Opt.ModelName);
-else
-    name = sprintf('volume_vs_time_vs_space_%s.png', Opt.ModelName);
-end
+name = sprintf('volume_vs_time_vs_space_%s.png', Opt.ModelName);
 drawnow;
 exportgraphics(hf, fullfile(Opt.OutDir, name), 'Resolution', Opt.Resolution);
 fprintf('Figure written to %s\n', fullfile(Opt.OutDir, name));
@@ -230,7 +255,7 @@ end
 
 
 function C = decodeComposition(raw, nx, ny)
-% Decode the run-length encoded material field (see CreateFigures.m).
+% Decode the run-length encoded material field (see reproduce_figures.m).
 raw = double(raw(:));
 n   = numel(raw);
 C   = ones(ny, nx);
@@ -263,10 +288,10 @@ end
 
 function checkRequirements()
 if exist('exportgraphics', 'file') == 0
-    error('CreateVolumeFigure:matlabVersion', 'MATLAB R2020a or newer is required (exportgraphics).');
+    error('reproduce_volcanics_graph:matlabVersion', 'MATLAB R2020a or newer is required (exportgraphics).');
 end
 if exist('crameri', 'file') ~= 2
-    error('CreateVolumeFigure:crameri', ...
+    error('reproduce_volcanics_graph:crameri', ...
         ['crameri.m not found. Download it (Scientific colour maps, ' ...
          'doi:10.5281/zenodo.1243862) and add it to the MATLAB path.']);
 end
